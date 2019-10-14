@@ -1,0 +1,406 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+	
+		<script src="js/glow.js" type="text/javascript"></script>
+    <style>
+        * {
+            font-family: "Meiryo", "Yu Gothic", Arial, Verdana, sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+        }
+
+        html {
+            /* Bottom-right Handle */
+            background: url(images/handle1.png);
+            background-position: bottom right;
+            background-repeat: no-repeat;
+            box-sizing: border-box;
+            height: 100%;
+            /* Hide the scrollbar */
+            overflow: hidden;
+
+            /* Background Color */
+        }
+		#title { 
+			width: 100%;
+			padding-bottom: 2px;
+			line-height: 1.2em;
+		}
+		#left {
+			width: 5%;
+			height: 30;
+			float: left;
+		}
+		#center { 
+			width: 80%;
+			height: 30;
+			color: white;
+			font-size: 12px;
+			text-align: center
+		}
+		#right { 
+			width: 5%;
+			height: 30px;
+			float: right;
+		}
+		
+        th, td {
+            text-align: center;
+            padding-left: 8px;
+            padding-right: 8px;
+			/*max-width: 120px;*/
+        }
+		
+		#titleBody { 
+			color: #e8ffff;
+			font-size: 12px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+		}
+        
+        #combatantTable {
+            table-layout: auto;
+            border-spacing: 5px 0px;
+        }
+
+        #combatantTableBody * {
+            color: #e8ffff;
+			font-size: 12px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+        }
+		#combatantTableFooter * {
+			font-size: 12px;
+		}
+        #combatantTableHeader * {
+            color: #e8ffff;
+            font-weight: 500;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+        }
+    </style>
+    <script>
+        var headerDefine = { text: "{name}", align: "center" };
+        var bodyDefine = { text: "{Job}\xa0\xa0\xa0\xa0\xa0DPS: {encdps}", align: "center" };
+		var statsDefine = { text: "{maxhit}"
+		+"\n dHit {DirectHitPct} | Crit {CritDirectHitPct} | CdHit {CritDirectHitPct}"
+		+ "\nDmg% {damage%} | Fuck Ups {deaths}" + "\n overHeal% {OverHealPct} | encHPS {healed%}" + "\n Duration: {duration}"
+		, align: "center" };
+        // Event Listeners - onOverlayDataUpdate
+        document.addEventListener("onOverlayDataUpdate", function (e) {
+            update(e.detail);
+        });
+        window.addEventListener("message", function (e) {
+            if (e.data.type === "onOverlayDataUpdate") {
+                update(e.data.detail);
+            }
+        });
+
+        // Update Display Elements
+        function update(data) {
+            updateCombatantListHeader(data);
+            updateCombatantList(data);
+			updateCombatantListFooter(data);
+        }
+
+        // Update Header
+        function updateCombatantListHeader(data) {
+            var table = document.getElementById('combatantTable');
+            var oldTableBody = table.tBodies.namedItem('combatantTableHeader');
+            var newTableBody = document.createElement("tbody");
+            newTableBody.id = "combatantTableHeader";
+            var tableList = newTableBody.insertRow();
+
+            // Create body content
+            var combatantIndex = 0
+            for (var combatantName in data.Combatant) {
+                var combatant = data.Combatant[combatantName];
+                var cell = tableList.insertCell(combatantIndex);
+                if (typeof headerDefine.text !== 'undefined') {
+                    var cellText;
+                    if (typeof headerDefine.text === 'function') {
+                        cellText = headerDefine.text(combatant, combatantIndex);
+                    } else {
+                        cellText = parseActFormat(headerDefine.text, combatant);
+                    }
+                    cell.innerText = cellText;
+                    
+                    if (combatant.Job === "Whm" || combatant.Job === "Sch" || combatant.Job === "Ast") {
+                        cell.style.color = "#ecffd6";
+                        cell.style.textShadow = "-1px 0 1px #465b34, 0 1px 1px #465b34, 1px 0 1px #465b34, 0 -1px 1px #465b34";
+                    } else if (combatant.Job === "Drk" || combatant.Job === "War" || combatant.Job === "Pld" || combatant.Job == "GNB") {
+                        cell.style.color = "#c5d0ff";
+                        cell.style.textShadow = "-1px 0 1px #202e80, 0 1px 1px #202e80, 1px 0 1px #202e80, 0 -1px 1px #202e80";
+                    } else if (combatant.Job == "Smn"){
+						cell.style.color = "#ecffd6";
+                        cell.style.textShadow = "-1px 0 1px #465b34, 0 1px 1px #465b34, 1px 0 1px #465b34, 0 -1px 1px #465b34";
+					} else {
+                        cell.style.color = "#ffa0a0";
+                        cell.style.textShadow = "-1px 0 1px #aa2d2d, 0 1px 1px #aa2d2d, 1px 0 1px #aa2d2d, 0 -1px 1px #aa2d2d";
+                    }
+                }
+                // Width
+                if (typeof(bodyDefine.width) !== 'undefined') {
+                    cell.style.width = bodyDefine.width;
+                    cell.style.maxWidth = bodyDefine.width;
+                }
+                // Line
+                if (typeof(headerDefine.align) !== 'undefined') {
+                    cell.style.textAlign = headerDefine.align;
+                }
+                // Effect
+                if (typeof headerDefine.effect === 'function') {
+                    headerDefine.effect(cell, combatant, combatantIndex);
+                }
+                combatantIndex++;
+            }
+
+            // Replace if exists, add to table if new
+            if (oldTableBody != void(0)) {
+                table.replaceChild(newTableBody, oldTableBody);
+            }
+            else {
+                table.appendChild(newTableBody);
+            }
+        }
+
+        // Update Player List
+        function updateCombatantList(data) {
+            var table = document.getElementById('combatantTable');
+            var oldTableBody = table.tBodies.namedItem('combatantTableBody');
+            var newTableBody = document.createElement("tbody");
+            newTableBody.id = "combatantTableBody";
+            var tableList = newTableBody.insertRow();
+
+
+            // Create body content
+            var combatantIndex = 0
+            for (var combatantName in data.Combatant) {
+                var combatant = data.Combatant[combatantName];
+                var cell = tableList.insertCell(combatantIndex);
+                
+                if (typeof bodyDefine.text !== 'undefined') {
+                    var cellText;
+                    if (typeof bodyDefine.text === 'function') {
+                        cellText = bodyDefine.text(combatant, combatantIndex);
+                    } else {
+                        cellText = parseActFormat(bodyDefine.text, combatant);
+                    }
+                    cell.innerText = cellText;
+					
+                    if (combatant.Job === "Whm" || combatant.Job === "Sch" || combatant.Job === "Ast") {
+						cell.style.color = "#ecffd6";
+                        cell.style.textShadow = "-1px 0 1px #465b34, 0 1px 1px #465b34, 1px 0 1px #465b34, 0 -1px 1px #465b34";
+                    } else if (combatant.Job === "Drk" || combatant.Job === "War" || combatant.Job === "Pld" || combatant.Job === "Gnb") {
+                        cell.style.color = "#c5d0ff";
+                        cell.style.textShadow = "-1px 0 1px #202e80, 0 1px 1px #202e80, 1px 0 1px #202e80, 0 -1px 1px #202e80";
+                    } else if (combatant.Job === "Smn" || combatant.Job === "Blm" || combatant.Job === "Rdm"){
+						cell.style.color = "#c5d0ff";
+						cell.style.textShadow = "-1px 0 1px #202e80, 0 1px 1px #202e80, 1px 0 1px #202e80, 0 -1px 1px #202e80";
+					} else {
+                        cell.style.color = "#ffa0a0";
+                        cell.style.textShadow = "-1px 0 1px #aa2d2d, 0 1px 1px #aa2d2d, 1px 0 1px #aa2d2d, 0 -1px 1px #aa2d2d";
+                    }
+                    
+                    if (combatant.Job === "Sam" || combatant.Job === "Mnk" || combatant.Job === "Drg" || combatant.Job === "Nin") {
+                        cell.style.backgroundColor = "rgba(174,5,5,0.9)";
+                        cell.style.borderRadius = "8px 8px 0px 0px";
+                    } else if (combatantName === 'Limit Break' || combatant.Job === '') {
+                        cell.style.backgroundColor = "rgba(10, 10, 10, 0.70)";
+                        cell.style.borderRadius = "8px 8px 0px 0px";
+                        cell.innerText = parseActFormat("{encdps} DPS", combatant).toUpperCase()
+                    } else if  (combatant.Job === "Whm" || combatant.Job === "Sch" || combatant.Job === "Ast") {
+                        cell.style.backgroundColor = "rgba(7, 98, 14,0.9)";
+                        cell.style.borderRadius = "8px 8px 0px 0px";
+                    } else if (combatant.Job === "Drk" || combatant.Job === "War" || combatant.Job === "Pld" || combatant.Job === "Gnb") {
+                        cell.style.backgroundColor = "rgba(19,77,159,0.9)";
+                        cell.style.borderRadius = "8px 8px 0px 0px";
+                    } else if (combatant.Job === "Smn" || combatant.Job === "Blm" || combatant.Job === "Rdm") {
+                        cell.style.backgroundColor = "rgba(93,7,149,0.9)";
+                        cell.style.borderRadius = "8px 8px 0px 0px";
+                    } else if  (combatant.Job === "Brd" || combatant.Job === "Mch" || combatant.Job === "Dnc") {
+                        cell.style.backgroundColor = "rgba(103,33,6,0.9)";
+                        cell.style.borderRadius = "8px 8px 0px 0px";
+					}
+                }
+				
+                // Width
+                if (typeof(bodyDefine.width) !== 'undefined') {
+                    cell.style.width = bodyDefine.width;
+                    cell.style.maxWidth = bodyDefine.width;
+                }
+                // Line
+                if (typeof(bodyDefine.align) !== 'undefined') {
+                    cell.style.textAlign = bodyDefine.align;
+                }
+                // Effect
+                if (typeof bodyDefine.effect === 'function') {
+                    bodyDefine.effect(cell, combatant, combatantIndex);
+                }
+                combatantIndex++;
+            }
+
+            // Replace if exists, add to table if new
+            if (oldTableBody != void(0)) {
+                table.replaceChild(newTableBody, oldTableBody);
+            }
+            else {
+                table.appendChild(newTableBody);
+            }
+        }
+		
+		 // Update Player List
+        function updateCombatantListFooter(data) {
+            var table = document.getElementById('combatantTable');
+            var oldTableBody = table.tBodies.namedItem('combatantTableFooter');
+            var newTableBody = document.createElement("tbody");
+            newTableBody.id = "combatantTableFooter";
+            var tableList = newTableBody.insertRow();
+
+
+            // Create body content
+            var combatantIndex = 0
+            for (var combatantName in data.Combatant) {
+                var combatant = data.Combatant[combatantName];
+                var cell = tableList.insertCell(combatantIndex);
+                
+                if (typeof statsDefine.text !== 'undefined') {
+                    var cellText;
+                    if (typeof statsDefine.text === 'function') {
+                        cellText = statsDefine.text(combatant, combatantIndex);
+                    } else {
+                        cellText = parseActFormat(statsDefine.text, combatant);
+                    }
+                    cell.innerText = cellText;
+					
+                    if (combatant.Job === "Whm" || combatant.Job === "Sch" || combatant.Job === "Ast") {
+						cell.style.color = "#ecffd6";
+                        cell.style.textShadow = "-1px 0 1px #465b34, 0 1px 1px #465b34, 1px 0 1px #465b34, 0 -1px 1px #465b34";
+                    } else if (combatant.Job === "Drk" || combatant.Job === "War" || combatant.Job === "Pld" || combatant.Job === "Gnb") {
+                        cell.style.color = "#c5d0ff";
+                        cell.style.textShadow = "-1px 0 1px #202e80, 0 1px 1px #202e80, 1px 0 1px #202e80, 0 -1px 1px #202e80";
+                    } else if (combatant.Job === "Smn" || combatant.Job === "Blm" || combatant.Job === "Rdm"){
+						cell.style.color = "#c5d0ff";
+						cell.style.textShadow = "-1px 0 1px #202e80, 0 1px 1px #202e80, 1px 0 1px #202e80, 0 -1px 1px #202e80";
+					} else {
+                        cell.style.color = "#ffa0a0";
+                        cell.style.textShadow = "-1px 0 1px #aa2d2d, 0 1px 1px #aa2d2d, 1px 0 1px #aa2d2d, 0 -1px 1px #aa2d2d";
+                    }
+                    
+                    if (combatant.Job === "Sam" || combatant.Job === "Mnk" || combatant.Job === "Drg"  || combatant.Job === "Nin") {
+                        cell.style.backgroundColor = "rgba(174,5,5,0.9)";
+                        cell.style.borderRadius = "0px 0px 8px 8px";
+                    } else if (combatantName === 'Limit Break' || combatant.Job === '') {
+                        cell.style.backgroundColor = "rgba(0, 0, 0, 0.70)";
+                        cell.style.borderRadius = "0px 0px 8px 8px";
+                        cell.innerText = parseActFormat("{maxhit}", combatant)
+                    } else if  (combatant.Job === "Whm" || combatant.Job === "Sch" || combatant.Job === "Ast") {
+                        cell.style.backgroundColor = "rgba(7, 98, 14,0.9)";
+                        cell.style.borderRadius = "0px 0px 8px 8px";
+                    } else if (combatant.Job === "Drk" || combatant.Job === "War" || combatant.Job === "Pld" || combatant.Job === "Gnb") {
+                        cell.style.backgroundColor = "rgba(19,77,159,0.9)";
+                        cell.style.borderRadius = "0px 0px 8px 8px";
+                    } else if (combatant.Job === "Smn" || combatant.Job === "Blm" || combatant.Job === "Rdm") {
+                        cell.style.backgroundColor = "rgba(93,7,149,0.9)";
+                        cell.style.borderRadius = "0px 0px 8px 8px";
+                    } else if  (combatant.Job === "Brd" || combatant.Job === "Mch" || combatant.Job === "Dnc") {
+                        cell.style.backgroundColor = "rgba(103,33,6,0.9)";
+                        cell.style.borderRadius = "0px 0px 8px 8px";
+					}
+                }
+				
+                // Width
+                if (typeof(statsDefine.width) !== 'undefined') {
+                    cell.style.width = statsDefine.width;
+                    cell.style.maxWidth = statsDefine.width;
+                }
+                // Line
+                if (typeof(statsDefine.align) !== 'undefined') {
+                    cell.style.textAlign = statsDefine.align;
+                }
+                // Effect
+                if (typeof statsDefine.effect === 'function') {
+                    statsDefine.effect(cell, combatant, combatantIndex);
+                }
+                combatantIndex++;
+            }
+
+            // Replace if exists, add to table if new
+            if (oldTableBody != void(0)) {
+                table.replaceChild(newTableBody, oldTableBody);
+            }
+            else {
+                table.appendChild(newTableBody);
+            }
+        }
+
+        // Obtain display string
+        function parseActFormat(str, dictionary)
+        {
+            var result = "";
+
+            var currentIndex = 0;
+            do {
+                var openBraceIndex = str.indexOf('{', currentIndex);
+                if (openBraceIndex < 0) {
+                    result += str.slice(currentIndex);
+                    break;
+                }
+                else {
+                    result += str.slice(currentIndex, openBraceIndex);
+                    var closeBraceIndex = str.indexOf('}', openBraceIndex);
+                    if (closeBraceIndex < 0) {
+                        // parse error!
+                        console.log("parseActFormat: Parse error: missing close-brace for " + openBraceIndex.toString() + ".");
+                        return "ERROR";
+                    }
+                    else {
+                        var tag = str.slice(openBraceIndex + 1, closeBraceIndex);
+                        if (typeof dictionary[tag] !== 'undefined') {
+                            result += dictionary[tag];
+                        } else {
+                            console.log("parseActFormat: Unknown tag: " + tag);
+                            result += "ERROR";
+                        }
+                        currentIndex = closeBraceIndex + 1;
+                    }
+                }
+            } while (currentIndex < str.length);
+
+            return result;
+        }
+    </script>
+</head>
+
+<body>
+	<header>
+	<!--<table id="title">
+		<tr>
+			<td id="left">
+				<img src="images/HP.png" height="30" width="30"\>
+			</td>
+			<td id="center">
+				<p>House Pendragon</p>
+			</td>
+			<td id="right">
+				<img src="images/HP.png" height="30" width="30"\>
+			</td>			
+		</tr>
+	</table>-->
+	</header>
+    <table id="combatantTable">
+		<div id="encounter" style="width: 90%; padding-top: 1px; text-align: left; color: blue;">
+			
+		</div>
+        <!-- Headers included here -->
+        <!-- Character info here -->
+    </table>
+</body>
+</html>

@@ -1,0 +1,54 @@
+
+
+        html {
+            /* Bottom-right Handle */
+			content: "test";
+            background: url(images/handle1.png), url(images/EK.png);
+            background-position: bottom right, left center;
+            background-repeat: no-repeat, no-repeat;
+            box-sizing: border-box;
+            height: 100%;
+            /* Hide the scrollbar */
+            overflow: hidden;
+
+            /* Background Color */
+            background-color: rgba(41, 10, 3, .2);
+			opacity: .1;
+        }
+        th, td {
+            text-align: center;
+            padding-left: 8px;
+            padding-right: 8px;
+			/*max-width: 120px;*/
+        }
+		
+		#titleBody { 
+			color: #e8ffff;
+			font-size: 11px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+		}
+        
+        #combatantTable {
+            table-layout: auto;
+            border-spacing: 5px 0px;
+        }
+
+        #combatantTableBody * {
+            color: #e8ffff;
+			font-size: 11px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+        }
+		#combatantTableFooter * {
+			font-size: 11px;
+		}
+        #combatantTableHeader * {
+            color: #e8ffff;
+            font-weight: 500;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+        }
